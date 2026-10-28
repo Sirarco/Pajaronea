@@ -1,0 +1,178 @@
+/* ==========================================================================
+   PAJARONEA - ESTILOS KAWAII Y RESPONSIVE
+   Proyecto Bitácora y Guía de Aves de Chile a Costo Cero
+   Firma: Code x VINI (marco.lara.vera@gmail.com)
+   ========================================================================== */
+
+:root {
+  --bg-cream: #FFFDF9;
+  --kawaii-pink: #FFB7C5;
+  --kawaii-pink-light: #FFEBF0;
+  --kawaii-pink-dark: #FF8BA7;
+  --kawaii-lavender: #E4DCFA;
+  --kawaii-lavender-dark: #8F7CC4;
+  --kawaii-mint: #C4F4D6;
+  --kawaii-mint-dark: #63C794;
+  --kawaii-sky: #C6E7FF;
+  --kawaii-yellow: #FEF0B2;
+  --kawaii-amber: #F6C953;
+  --kawaii-text: #48384E;
+  --kawaii-subtext: #7D6C85;
+  --card-radius: 24px;
+}
+
+body {
+  font-family: 'Quicksand', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--bg-cream);
+  color: var(--kawaii-text);
+  background-image: 
+    radial-gradient(#F5E4F0 1.5px, transparent 1.5px),
+    radial-gradient(#E8F4EE 1.5px, var(--bg-cream) 1.5px);
+  background-size: 36px 36px;
+  background-position: 0 0, 18px 18px;
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.font-hand {
+  font-family: 'Gaegu', cursive;
+}
+
+/* ==========================================================================
+   ANIMACIÓN NEÓN PARA LA FIRMA 'VINI' (REQUERIMIENTO EXPLÍCITO)
+   ========================================================================== */
+@keyframes neonPulseVini {
+  0%, 100% {
+    color: #FFFFFF;
+    text-shadow: 
+      0 0 4px #FF1493,
+      0 0 10px #FF1493,
+      0 0 20px #FF1493,
+      0 0 35px #FF69B4;
+    border-color: rgba(255, 20, 147, 0.6);
+    box-shadow: 0 0 10px rgba(255, 20, 147, 0.4), inset 0 0 6px rgba(255, 20, 147, 0.3);
+  }
+  33% {
+    color: #FFFFFF;
+    text-shadow: 
+      0 0 4px #00F0FF,
+      0 0 10px #00F0FF,
+      0 0 20px #00F0FF,
+      0 0 35px #00A2FF;
+    border-color: rgba(0, 240, 255, 0.6);
+    box-shadow: 0 0 10px rgba(0, 240, 255, 0.4), inset 0 0 6px rgba(0, 240, 255, 0.3);
+  }
+  66% {
+    color: #FFFFFF;
+    text-shadow: 
+      0 0 4px #FFE600,
+      0 0 10px #FFE600,
+      0 0 20px #FFAA00,
+      0 0 35px #FF8800;
+    border-color: rgba(255, 230, 0, 0.6);
+    box-shadow: 0 0 10px rgba(255, 230, 0, 0.4), inset 0 0 6px rgba(255, 230, 0, 0.3);
+  }
+}
+
+.neon-vini {
+  display: inline-block;
+  font-weight: 900;
+  letter-spacing: 1.5px;
+  padding: 3px 10px;
+  border-radius: 12px;
+  background: #23192B;
+  border: 1.5px solid #FF1493;
+  animation: neonPulseVini 3.5s infinite ease-in-out;
+  text-decoration: none;
+  transition: transform 0.2s ease;
+  vertical-align: middle;
+}
+
+.neon-vini:hover {
+  transform: scale(1.08) rotate(-2deg);
+}
+
+/* ==========================================================================
+   SOLUCIÓN DE ENCUADRE DE IMÁGENES (CORRECCIÓN FOCO DE AVE)
+   ========================================================================== */
+.bird-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* Centrado priorizando tercio superior (25%) para capturar cabeza y ojos */
+  object-position: center 25%;
+  transition: transform 0.4s ease, filter 0.3s ease;
+}
+
+.bird-card-img:hover {
+  transform: scale(1.04);
+}
+
+/* ==========================================================================
+   EFECTO 3D DE GIRO DE TARJETAS (CARDS FLIP)
+   ========================================================================== */
+.card-scene {
+  perspective: 1100px;
+}
+
+.card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.65s cubic-bezier(0.4, 0.2, 0.2, 1);
+  transform-style: preserve-3d;
+}
+
+.card-inner.is-flipped {
+  transform: rotateY(180deg);
+}
+
+.card-face {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border-radius: var(--card-radius);
+  overflow: hidden;
+}
+
+.card-face-back {
+  transform: rotateY(180deg);
+  overflow-y: auto;
+}
+
+/* Scrollbar kawaii suave para el reverso de la tarjeta */
+.card-face-back::-webkit-scrollbar {
+  width: 5px;
+}
+.card-face-back::-webkit-scrollbar-track {
+  background: transparent;
+}
+.card-face-back::-webkit-scrollbar-thumb {
+  background: #E4DCFA;
+  border-radius: 10px;
+}
+
+/* Resplandor especial para aves avistadas */
+.seen-card-glow {
+  box-shadow: 0 10px 25px -5px rgba(245, 158, 11, 0.3), 0 8px 10px -6px rgba(245, 158, 11, 0.2);
+}
+
+/* Floating soft animations */
+@keyframes softFloat {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-5px) rotate(1deg); }
+}
+
+.animate-soft-float {
+  animation: softFloat 4s ease-in-out infinite;
+}
+
+/* Modal Backdrop */
+.modal-backdrop {
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  background-color: rgba(35, 25, 43, 0.65);
+}

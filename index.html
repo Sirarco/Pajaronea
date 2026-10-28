@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pajaronea · Bitácora y Guía de Aves de Chile</title>
+  
+  <!-- Favicon con emoji de ave (requerimiento) -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🐦</text></svg>">
+
+  <!-- Tipografía amigable y tierna Quicksand y Gaegu -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700;800&family=Gaegu:wght@700&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Estilos del proyecto Pajaronea -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-[#FFFDF9]">
+
+  <!-- Lienzo de Confetti Pastel -->
+  <canvas id="confetti-canvas" class="fixed inset-0 pointer-events-none z-50"></canvas>
+
+  <!-- Toast Kawaii para notificaciones amigables -->
+  <div 
+    id="kawaii-toast" 
+    class="fixed bottom-6 right-6 z-50 max-w-sm w-full bg-white/95 backdrop-blur-md border-2 border-pink-200 p-4 rounded-3xl shadow-xl transition-all duration-300 transform translate-y-24 opacity-0 flex items-start gap-3"
+  >
+    <div class="p-2.5 bg-pink-100 text-pink-600 rounded-2xl text-xl">🐦</div>
+    <div class="flex-1">
+      <h4 id="toast-title" class="font-extrabold text-sm text-[#48344F]">¡Aviso!</h4>
+      <p id="toast-msg" class="text-xs text-[#7D6C85] mt-0.5">Mensaje de notificación.</p>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       1. SECCIÓN DE LANDING INICIAL / IDENTIFÍCATE
+       ======================================================================== -->
+  <section id="landing-section" class="min-h-screen flex flex-col justify-between p-4 sm:p-8 relative overflow-hidden">
+    
+    <!-- Elementos decorativos de fondo flotantes -->
+    <div class="absolute -top-12 -left-12 w-48 h-48 bg-pink-200/40 rounded-full blur-2xl pointer-events-none"></div>
+    <div class="absolute top-1/3 -right-16 w-56 h-56 bg-purple-200/40 rounded-full blur-2xl pointer-events-none"></div>
+    <div class="absolute -bottom-10 left-1/4 w-60 h-60 bg-yellow-100/50 rounded-full blur-2xl pointer-events-none"></div>
+
+    <!-- Contenido Central de la Landing -->
+    <div class="max-w-2xl mx-auto w-full my-auto py-8 text-center relative z-10">
+      
+      <!-- Logo y Título Principal -->
+      <div class="inline-flex items-center justify-center p-3 sm:p-4 bg-pink-100/80 rounded-3xl mb-4 shadow-sm border border-pink-200 animate-soft-float">
+        <span class="text-4xl sm:text-5xl">🐦</span>
+      </div>
+
+      <h1 class="text-3xl sm:text-5xl font-black text-[#48344F] tracking-tight mb-2">
+        Pajaronea
+      </h1>
+      <p class="text-sm sm:text-base font-extrabold text-[#FF8BA7] uppercase tracking-wider mb-3">
+        Bitácora de Campo & Guía Didáctica · Aves de Chile
+      </p>
+      <p class="text-xs sm:text-sm text-[#7D6C85] max-w-lg mx-auto leading-relaxed mb-8">
+        Aprende a reconocer las aves de Santiago y Chile, registra tus avistamientos en Google Sheets y guarda tus fotografías en Google Drive a costo cero.
+      </p>
+
+      <!-- Tarjeta de Identificación / Login por Contraseña -->
+      <div class="bg-white/95 backdrop-blur-md p-6 sm:p-8 rounded-3xl border-2 border-pink-200 shadow-xl max-w-md mx-auto text-left relative">
+        <div class="flex items-center justify-between mb-4 border-b border-pink-100 pb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-xl">🔐</span>
+            <h2 class="font-extrabold text-base text-[#48344F]">Identifícate</h2>
+          </div>
+          <span class="text-[11px] font-bold bg-pink-50 text-pink-700 px-2.5 py-1 rounded-full border border-pink-200">
+            Acceso Rápido
+          </span>
+        </div>
+
+        <form onsubmit="handlePasswordLogin(event)" class="space-y-4">
+          <div>
+            <label class="block text-xs font-bold text-[#7D6C85] mb-1.5" for="input-password">
+              Ingresa tu contraseña:
+            </label>
+            <div class="relative">
+              <input 
+                type="password" 
+                id="input-password" 
+                placeholder="Escribe tu clave aquí..." 
+                class="w-full px-4 py-2.5 rounded-2xl bg-pink-50/50 border-2 border-pink-200 text-xs sm:text-sm focus:outline-none focus:border-pink-400 focus:bg-white transition"
+              />
+              <span class="absolute right-3.5 top-2.5 text-sm text-gray-400">🔑</span>
+            </div>
+            <p class="text-[11px] text-gray-400 mt-1.5 flex items-center gap-1">
+              <span>💡</span> Clave de prueba: <code class="font-bold text-pink-600 bg-pink-50 px-1 py-0.5 rounded">pajareo2024</code>
+            </p>
+          </div>
+
+          <!-- Botón de Entrada Principal -->
+          <button 
+            type="submit" 
+            id="btn-login-submit"
+            class="w-full py-3 px-4 rounded-2xl bg-[#FFB7C5] hover:bg-[#FF8BA7] text-white font-extrabold text-xs sm:text-sm shadow-md transition-all transform active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <span>Ingresar a mi Bitácora</span>
+            <span>✨</span>
+          </button>
+        </form>
+
+        <!-- Divisor suave -->
+        <div class="relative my-5">
+          <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-100"></div></div>
+          <div class="relative flex justify-center text-[10px] uppercase font-bold text-gray-400">
+            <span class="bg-white px-2">O prueba la web sin conexión</span>
+          </div>
+        </div>
+
+        <!-- Botón Ver Demo de la Web (20 Aves) -->
+        <button 
+          onclick="switchAppMode('demo', 'Observador/a Demo')"
+          class="w-full py-2.5 px-4 rounded-2xl bg-purple-100 hover:bg-purple-200 text-purple-900 font-extrabold text-xs transition flex items-center justify-center gap-2 cursor-pointer border border-purple-200"
+        >
+          <span>🎮</span>
+          <span>Ver Demo de la Web (20 Aves)</span>
+        </button>
+
+        <!-- Enlace a Ajustes de Apps Script -->
+        <div class="mt-4 pt-3 border-t border-gray-100 text-center">
+          <button 
+            onclick="openSettingsModal()" 
+            class="text-[11px] font-bold text-gray-500 hover:text-pink-600 transition flex items-center justify-center gap-1 mx-auto"
+          >
+            <span>⚙️</span>
+            <span>Vincular mi URL de Google Apps Script</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Puntos Clave de la Plataforma -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-xl mx-auto mt-8 text-left text-xs">
+        <div class="p-3 bg-white/70 rounded-2xl border border-pink-100 shadow-2xs">
+          <span class="text-base block mb-1">🌿 Guía Didáctica</span>
+          <p class="text-[11px] text-[#7D6C85]">Filtra por dieta, hábitat de Santiago y tamaño relativo para aprender observando.</p>
+        </div>
+        <div class="p-3 bg-white/70 rounded-2xl border border-purple-100 shadow-2xs">
+          <span class="text-base block mb-1">📸 Cámara en Terreno</span>
+          <p class="text-[11px] text-[#7D6C85]">Saca fotos desde tu celular y almacénalas en tu Google Drive a costo cero.</p>
+        </div>
+        <div class="p-3 bg-white/70 rounded-2xl border border-amber-100 shadow-2xs">
+          <span class="text-base block mb-1">📊 Google Sheets</span>
+          <p class="text-[11px] text-[#7D6C85]">Registro de fecha, hora y trazabilidad de avistamientos para tus salidas de pajareo.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Footer de la Landing con la firma requerida -->
+    <footer class="text-center py-4 text-xs text-[#7D6C85] border-t border-pink-100/60 mt-auto">
+      <div class="flex items-center justify-center gap-2">
+        <span class="font-bold">Code x</span>
+        <a 
+          href="mailto:marco.lara.vera@gmail.com" 
+          class="neon-vini text-xs"
+          title="Contacto: marco.lara.vera@gmail.com"
+        >
+          VINI
+        </a>
+      </div>
+      <p class="text-[10px] text-gray-400 mt-1">
+        Pajaronea · Santiago de Chile · Proyecto 100% a costo cero
+      </p>
+    </footer>
+
+  </section>
+
+  <!-- ========================================================================
+       2. SECCIÓN PRINCIPAL DE LA APLICACIÓN (DASHBOARD)
+       ======================================================================== -->
+  <section id="main-app-section" class="hidden min-h-screen flex flex-col justify-between">
+    
+    <!-- Barra Superior de Navegación -->
+    <header class="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b-2 border-pink-100 px-4 sm:px-8 py-3 transition shadow-2xs">
+      <div class="max-w-6xl mx-auto flex items-center justify-between gap-3">
+        
+        <!-- Logo e Identidad -->
+        <div class="flex items-center gap-2.5 cursor-pointer" onclick="logoutToLanding()">
+          <span class="text-2xl p-1 bg-pink-100 rounded-xl">🐦</span>
+          <div>
+            <h1 class="text-base sm:text-lg font-black text-[#48344F] leading-tight">Pajaronea</h1>
+            <p class="text-[10px] text-pink-500 font-bold hidden sm:block">Bitácora de Campo de Chile</p>
+          </div>
+        </div>
+
+        <!-- Saludo Personalizado y Badge de Estado -->
+        <div class="flex items-center gap-2 sm:gap-3">
+          <span id="user-greeting" class="font-extrabold text-xs sm:text-sm text-[#48344F] hidden md:inline">
+            Hola, Observador/a 👋
+          </span>
+          <div id="mode-badge" class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+            Modo Demo
+          </div>
+        </div>
+
+        <!-- Botones de Acción Superior -->
+        <div class="flex items-center gap-1.5 sm:gap-2">
+          <!-- Botón para cargar API completa de aves.ninjas.cl -->
+          <button 
+            onclick="loadFullChileanBirdsApi()"
+            title="Cargar catálogo extendido de más de 200 especies de aves de Chile"
+            class="px-2.5 sm:px-3 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold text-xs border border-purple-200 flex items-center gap-1 transition"
+          >
+            <span>🦅</span>
+            <span class="hidden sm:inline">Cargar API 200+ Aves</span>
+          </button>
+
+          <!-- Botón de Configuración -->
+          <button 
+            onclick="openSettingsModal()"
+            title="Configuración de Google Sheets y Google Drive"
+            class="p-2 rounded-xl bg-gray-50 hover:bg-gray-100 text-gray-600 font-bold text-xs border border-gray-200 transition"
+          >
+            <span>⚙️</span>
+          </button>
+
+          <!-- Botón Salir -->
+          <button 
+            onclick="logoutToLanding()"
+            title="Volver a la portada de bienvenida"
+            class="p-2 sm:px-3 sm:py-1.5 rounded-xl bg-pink-50 hover:bg-pink-100 text-pink-700 font-bold text-xs border border-pink-200 flex items-center gap-1 transition"
+          >
+            <span>🚪</span>
+            <span class="hidden sm:inline">Salir</span>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- Saludo móvil cuando se oculta en pantallas pequeñas -->
+      <div class="md:hidden mt-1.5 pt-1.5 border-t border-pink-50 flex items-center justify-between text-xs">
+        <span id="user-greeting-mobile" class="font-extrabold text-[#48344F]">Hola, Observador/a 👋</span>
+        <span class="text-[10px] text-[#7D6C85]">Santiago de Chile</span>
+      </div>
+    </header>
+
+    <!-- Contenido Principal -->
+    <main class="max-w-6xl mx-auto w-full px-4 sm:px-8 py-5 flex-1">
+      
+      <!-- Panel de Métricas y Progreso -->
+      <div class="bg-white/80 backdrop-blur-xs p-4 sm:p-5 rounded-3xl border-2 border-pink-100 mb-5 shadow-xs">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+          <div>
+            <h2 class="text-sm sm:text-base font-black text-[#48344F] flex items-center gap-1.5">
+              <span>🌿</span>
+              <span>Progreso de tu Bitácora</span>
+            </h2>
+            <p class="text-xs text-[#7D6C85]">Registra cada especie que observes en plazas, cerros o parques.</p>
+          </div>
+
+          <!-- Contadores Kawaii -->
+          <div class="flex items-center gap-2">
+            <div class="bg-pink-50 px-3 py-1.5 rounded-2xl border border-pink-200 text-center">
+              <span class="text-[10px] font-bold text-pink-700 uppercase block">Pendientes</span>
+              <span id="counter-unseen" class="font-black text-sm text-[#48344F]">20</span>
+            </div>
+            <div class="bg-amber-50 px-3 py-1.5 rounded-2xl border border-amber-200 text-center">
+              <span class="text-[10px] font-bold text-amber-700 uppercase block">Avistadas</span>
+              <span id="counter-seen" class="font-black text-sm text-[#48344F]">0 / 20</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Barra de Progreso Animada -->
+        <div class="w-full bg-pink-100/60 rounded-full h-3 overflow-hidden p-0.5 border border-pink-200">
+          <div 
+            id="progress-bar-fill" 
+            class="bg-gradient-to-r from-pink-300 via-purple-300 to-amber-300 h-full rounded-full transition-all duration-500" 
+            style="width: 0%"
+          ></div>
+        </div>
+        <div class="flex justify-between items-center text-[10px] text-[#7D6C85] font-bold mt-1.5">
+          <span>0% completado</span>
+          <span id="progress-text">0% completado</span>
+          <span>100% maestro/a pajarero/a</span>
+        </div>
+      </div>
+
+      <!-- Selector de Pestañas de Vista -->
+      <div class="flex items-center justify-center gap-1 sm:gap-2 mb-5">
+        <button 
+          id="tab-unseen"
+          onclick="switchViewTab('unseen')"
+          class="px-4 sm:px-6 py-2 rounded-2xl font-extrabold text-xs sm:text-sm transition-all bg-[#FFB7C5] text-white shadow-xs flex items-center gap-1.5 cursor-pointer"
+        >
+          <span>🔭</span>
+          <span>Por descubrir</span>
+          <span id="tab-badge-unseen" class="bg-white/40 text-white text-[10px] px-1.5 py-0.2 rounded-full">20</span>
+        </button>
+
+        <button 
+          id="tab-seen"
+          onclick="switchViewTab('seen')"
+          class="px-4 sm:px-6 py-2 rounded-2xl font-bold text-xs sm:text-sm transition-all text-[#7D6C85] hover:bg-pink-50 flex items-center gap-1.5 cursor-pointer"
+        >
+          <span>⭐</span>
+          <span>Avistadas</span>
+          <span id="tab-badge-seen" class="bg-amber-100 text-amber-800 text-[10px] px-1.5 py-0.2 rounded-full">0</span>
+        </button>
+
+        <button 
+          id="tab-all"
+          onclick="switchViewTab('all')"
+          class="px-4 sm:px-6 py-2 rounded-2xl font-bold text-xs sm:text-sm transition-all text-[#7D6C85] hover:bg-pink-50 flex items-center gap-1.5 cursor-pointer"
+        >
+          <span>📚</span>
+          <span>Todas</span>
+        </button>
+      </div>
+
+      <!-- Contenedor de Filtros Pedagógicos (Búsqueda, Zona, Alimentación, Hábitat, Tamaño) -->
+      <div id="filters-container" class="mb-6">
+        <!-- Renderizado dinámico desde app.js -->
+      </div>
+
+      <!-- Cuadrícula de Tarjetas (Grid) -->
+      <div id="birds-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+        <!-- Las tarjetas se generan dinámicamente aquí -->
+      </div>
+
+      <!-- Estado Vacío cuando no hay resultados -->
+      <div id="empty-state" class="hidden text-center py-16 bg-white/70 rounded-3xl border border-pink-100 my-8">
+        <span class="text-5xl block mb-2">🍃</span>
+        <h3 class="font-black text-base text-[#48344F] mb-1">No encontramos aves con estos filtros</h3>
+        <p class="text-xs text-[#7D6C85] max-w-sm mx-auto mb-4">Prueba limpiando los filtros o buscando con otro término.</p>
+        <button 
+          onclick="resetAllFilters()"
+          class="px-4 py-2 bg-pink-100 hover:bg-pink-200 text-pink-700 font-extrabold text-xs rounded-2xl transition"
+        >
+          Restablecer filtros
+        </button>
+      </div>
+
+    </main>
+
+    <!-- Footer de la Aplicación -->
+    <footer class="bg-white/80 border-t border-pink-100 py-5 px-4 text-center text-xs text-[#7D6C85]">
+      <div class="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div class="flex items-center gap-2">
+          <span>🐦 Pajaronea · Bitácora & Guía de Aves de Chile</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="font-bold">Code x</span>
+          <a 
+            href="mailto:marco.lara.vera@gmail.com" 
+            class="neon-vini text-xs"
+            title="Contacto: marco.lara.vera@gmail.com"
+          >
+            VINI
+          </a>
+        </div>
+        <div class="text-[11px] text-gray-400">
+          <span>100% a costo cero con Google Drive & Google Sheets</span>
+        </div>
+      </div>
+    </footer>
+
+  </section>
+
+  <!-- ========================================================================
+       3. MODALES DE LA APLICACIÓN
+       ======================================================================== -->
+
+  <!-- A. Modal Lightbox (Visor Ampliado sin recortes) -->
+  <div id="lightbox-modal" class="hidden fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl border-2 border-pink-200 relative animate-soft-float">
+      <!-- Botón cerrar -->
+      <button 
+        onclick="closeLightboxModal()"
+        class="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-white/80 hover:bg-white text-gray-700 font-black text-sm flex items-center justify-center shadow-md transition"
+      >
+        ✕
+      </button>
+
+      <div class="relative w-full h-72 sm:h-80 bg-black flex items-center justify-center overflow-hidden">
+        <img id="lightbox-img" src="" alt="Ave" class="w-full h-full object-contain" />
+      </div>
+
+      <div class="p-5">
+        <div class="flex items-center justify-between mb-1">
+          <h3 id="lightbox-title" class="text-lg font-black text-[#48344F]">Nombre del Ave</h3>
+          <span class="text-[10px] font-bold bg-pink-100 text-pink-700 px-2 py-0.5 rounded-full">Alta Definición</span>
+        </div>
+        <p id="lightbox-sci" class="text-xs text-purple-600 font-medium italic mb-2">Nombre científico</p>
+        <p id="lightbox-desc" class="text-xs text-gray-600 leading-relaxed bg-pink-50/60 p-3 rounded-2xl border border-pink-100">
+          Curiosidad y descripción del ave.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- B. Modal de Confirmación y Vista Previa de Foto de Campo -->
+  <div id="photo-preview-modal" class="hidden fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-5 shadow-2xl border-2 border-purple-200 relative">
+      <div class="flex items-center justify-between border-b border-purple-100 pb-2.5 mb-3">
+        <h3 id="photo-preview-name" class="font-black text-sm text-[#48344F]">Tu Foto de Avistamiento 📸</h3>
+        <button onclick="closePhotoPreviewModal()" class="text-gray-400 hover:text-gray-600 text-sm">✕</button>
+      </div>
+
+      <div class="w-full h-56 bg-gray-100 rounded-2xl overflow-hidden mb-3 border border-purple-100 flex items-center justify-center">
+        <img id="photo-preview-img" src="" alt="Previsualización" class="w-full h-full object-cover" />
+      </div>
+
+      <div class="mb-4">
+        <label class="block text-xs font-bold text-[#7D6C85] mb-1" for="photo-notes-input">
+          Nota del avistamiento (ej. Parque Bicentenario, cerro San Cristóbal):
+        </label>
+        <input 
+          type="text" 
+          id="photo-notes-input" 
+          placeholder="Lugar o detalle del avistamiento..." 
+          class="w-full px-3 py-2 text-xs rounded-xl border border-purple-200 focus:outline-none focus:border-purple-400 bg-purple-50/40"
+        />
+      </div>
+
+      <div class="flex gap-2">
+        <button 
+          onclick="closePhotoPreviewModal()" 
+          class="flex-1 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs transition"
+        >
+          Cancelar
+        </button>
+        <button 
+          onclick="confirmPhotoUpload()" 
+          class="flex-1 py-2 rounded-xl bg-[#FFB7C5] hover:bg-[#FF8BA7] text-white font-extrabold text-xs transition shadow-md flex items-center justify-center gap-1.5"
+        >
+          <span>☁️</span>
+          <span>Guardar en Drive</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- C. Modal de Revisión de Foto Guardada en Google Drive -->
+  <div id="photo-review-modal" class="hidden fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full overflow-hidden shadow-2xl border-2 border-emerald-200 relative">
+      <div class="p-4 bg-emerald-50/80 border-b border-emerald-100 flex items-center justify-between">
+        <div>
+          <span class="text-[10px] font-bold text-emerald-700 uppercase tracking-wider block">Foto en Google Drive 📁</span>
+          <h3 id="photo-review-name" class="font-black text-sm text-[#48344F]">Nombre del Ave</h3>
+        </div>
+        <button onclick="closePhotoReviewModal()" class="text-gray-400 hover:text-gray-600 text-sm">✕</button>
+      </div>
+
+      <div class="w-full h-64 bg-black flex items-center justify-center">
+        <img id="photo-review-img" src="" alt="Foto de Campo" class="w-full h-full object-contain" />
+      </div>
+
+      <div class="p-4 space-y-2 text-xs">
+        <p id="photo-review-date" class="font-bold text-[#48344F]">📅 Fecha y hora: --</p>
+        <p id="photo-review-notes" class="text-gray-600 bg-gray-50 p-2 rounded-xl">📝 Notas: --</p>
+        <div class="pt-2 flex justify-between items-center">
+          <a 
+            id="photo-review-link" 
+            href="#" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            class="text-xs font-bold text-purple-700 hover:text-purple-900 underline flex items-center gap-1"
+          >
+            <span>🔗 Abrir original en Google Drive</span>
+          </a>
+          <button 
+            onclick="closePhotoReviewModal()" 
+            class="px-4 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs"
+          >
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- D. Modal de Configuración de Google Apps Script (GAS) -->
+  <div id="settings-modal" class="hidden fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border-2 border-pink-200 relative">
+      <div class="flex items-center justify-between border-b border-pink-100 pb-2.5 mb-3">
+        <h3 class="font-black text-sm text-[#48344F] flex items-center gap-1.5">
+          <span>⚙️</span> Configuración de Google Apps Script
+        </h3>
+        <button onclick="closeSettingsModal()" class="text-gray-400 hover:text-gray-600 text-sm">✕</button>
+      </div>
+
+      <p class="text-xs text-[#7D6C85] mb-3 leading-relaxed">
+        Pega aquí la URL de tu <strong>Aplicación Web de Google Apps Script</strong> (terminada en <code>/exec</code>) vinculada a tu Google Sheet y Google Drive.
+      </p>
+
+      <div class="mb-4">
+        <label class="block text-xs font-bold text-[#7D6C85] mb-1" for="settings-gas-url">
+          URL del Web App (GAS):
+        </label>
+        <input 
+          type="url" 
+          id="settings-gas-url" 
+          placeholder="https://script.google.com/macros/s/.../exec"
+          class="w-full px-3 py-2 text-xs rounded-xl border-2 border-pink-200 focus:outline-none focus:border-pink-400 bg-pink-50/30"
+        />
+        <p class="text-[10px] text-gray-400 mt-1">Se guarda en el almacenamiento local de tu navegador.</p>
+      </div>
+
+      <div class="bg-purple-50 p-3 rounded-2xl border border-purple-100 text-[11px] text-purple-900 mb-4 space-y-1">
+        <p class="font-bold">¿Cómo obtenerla?</p>
+        <ol class="list-decimal list-inside space-y-0.5 text-[10px] text-purple-800">
+          <li>Copia el archivo <code>Code.gs</code> en Extensiones > Apps Script de tu Sheet.</li>
+          <li>Haz clic en <strong>Implementar > Nueva implementación</strong>.</li>
+          <li>Tipo: <em>Aplicación web</em> | Acceso: <em>Cualquier usuario</em>.</li>
+        </ol>
+      </div>
+
+      <div class="flex gap-2">
+        <button 
+          onclick="closeSettingsModal()" 
+          class="flex-1 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs"
+        >
+          Cerrar
+        </button>
+        <button 
+          onclick="saveGasUrlSettings()" 
+          class="flex-1 py-2 rounded-xl bg-[#FFB7C5] hover:bg-[#FF8BA7] text-white font-extrabold text-xs shadow-md"
+        >
+          Guardar Cambios
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Lógica modular de Pajaronea -->
+  <script src="app.js"></script>
+</body>
+</html>
