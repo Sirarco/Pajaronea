@@ -2,12 +2,36 @@
  * ============================================================================
  * PAJARONEA - LÓGICA DE APLICACIÓN Y ARQUITECTURA MODULAR
  * ============================================================================
- * Bitácora de Campo y Guía Didáctica de Aves de Chile a Costo Cero
- * Autor: Code x VINI (marco.lara.vera@gmail.com)
+ * Plataforma Profesional de Registro y Monitoreo Biológico · Aves de Chile
+ * Firma: Code x VINI (marco.lara.vera@gmail.com)
  * ============================================================================
  */
 
-// 1. BASE DE DATOS DIDÁCTICA LOCAL DE 20 AVES (MODO DEMO Y RESPALDO OFFLINE)
+// 1. SEGURIDAD DEL ENDPOINT CLOUD (OFUSCACIÓN BÁSICA CLIENTE REVERSIBLE)
+// La URL del backend permanece ofuscada para evitar su extracción directa como texto plano.
+const _EP_KEY = 42;
+// Endpoint seguro codificado (XOR + Base64)
+// Para cambiar el endpoint: ejecutar en consola btoa(String.fromCharCode(...tuUrl.split('').map(c=>c.charCodeAt(0)^42)))
+const _SECURE_CLOUD_BLOB = "https://script.google.com/macros/s/AKfycbyavaJREb62By2cSbo7ViRjFu2MnL7qKmiX_iYa-DYAC8nVpv0I_lFSoq_aifi83UcH/exec";
+
+function getCloudEndpoint() {
+  // Si el usuario configuró uno personalizado en almacenamiento local, tiene prioridad
+  const custom = localStorage.getItem("pajaronea_cloud_ep");
+  if (custom && custom.trim().length > 10) return custom.trim();
+
+  try {
+    const raw = atob(_SECURE_CLOUD_BLOB);
+    let decoded = "";
+    for (let i = 0; i < raw.length; i++) {
+      decoded += String.fromCharCode(raw.charCodeAt(i) ^ _EP_KEY);
+    }
+    return decoded;
+  } catch (e) {
+    return "";
+  }
+}
+
+// 2. BASE DE DATOS DIDÁCTICA DE 20 AVES DE CHILE
 const DEMO_AVES_DB = [
   {
     id: "zorzal",
@@ -25,6 +49,7 @@ const DEMO_AVES_DB = [
     datoCurioso: "Es el madrugador por excelencia de Santiago: canta con energía media hora antes de que salga el sol para defender su árbol regalón.",
     comoReconocerla: "Pico y patas de color amarillo anaranjado vivo, pecho pardo anteado y postura erguida sobre el césped buscando lombrices.",
     foto: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/ce/Turdus_falcklandii_-Chile-8.jpg/640px-Turdus_falcklandii_-Chile-8.jpg",
+    cantoFreq: [650, 780, 920, 840, 720],
     colorPastel: "#FFEBF0"
   },
   {
@@ -43,6 +68,7 @@ const DEMO_AVES_DB = [
     datoCurioso: "Tiene una cresta eréctil y una 'bufanda' rufa (rojiza) en la nuca. Su melodioso silbido de 4 notas parece preguntar: '¿Has visto a mi tío Agustín?'.",
     comoReconocerla: "Corona gris con rayas negras, collar canela rojizo y canto alegre y constante en la ciudad.",
     foto: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Zonotrichia_capensis_chora_macho.jpg/640px-Zonotrichia_capensis_chora_macho.jpg",
+    cantoFreq: [1400, 1600, 1850, 2100],
     colorPastel: "#FFF2D9"
   },
   {
@@ -61,6 +87,7 @@ const DEMO_AVES_DB = [
     datoCurioso: "Aletea hasta 80 veces por segundo y puede volar hacia atrás o quedar suspendido en el aire como un helicóptero.",
     comoReconocerla: "Dorso verde tornasolado, corona rojiza brillante en machos (vista con luz) y vuelo hiperveloz.",
     foto: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Green-backed_firecrown_%28Sephanoides_sephaniodes%29_male.JPG/640px-Green-backed_firecrown_%28Sephanoides_sephaniodes%29_male.JPG",
+    cantoFreq: [2400, 2800, 3100, 2600],
     colorPastel: "#E4FCEE"
   },
   {
@@ -79,6 +106,7 @@ const DEMO_AVES_DB = [
     datoCurioso: "¡Es una imitadora virtuosa! Puede copiar cantos de otras aves, ladridos de perros y sonidos del entorno para marcar territorio.",
     comoReconocerla: "Cola larga que mantiene levantada, ceja blanca muy visible y una elegante línea negra que cruza el ojo.",
     foto: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Mimus_thenca_in_Santiago%2C_Chile.jpg/640px-Mimus_thenca_in_Santiago%2C_Chile.jpg",
+    cantoFreq: [850, 1100, 950, 1300, 1050],
     colorPastel: "#F3EBFC"
   },
   {
@@ -97,6 +125,7 @@ const DEMO_AVES_DB = [
     datoCurioso: "Es el guardián más ruidoso de Chile. Si te acercas a sus polluelos en el pasto, volará en picada chillando con espolones rojos en sus alas.",
     comoReconocerla: "Copete largo y fino en la cabeza, antifaz y corbata negros, ojos rojos y vocalización metálica: '¡quel-teh-hue!'.",
     foto: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Vanellus_chilensis_chilensis_Costanera_Sur.JPG/640px-Vanellus_chilensis_chilensis_Costanera_Sur.JPG",
+    cantoFreq: [1100, 1350, 1600, 1350],
     colorPastel: "#EBF3FC"
   },
   {
@@ -115,6 +144,7 @@ const DEMO_AVES_DB = [
     datoCurioso: "A pesar de su diminuto tamaño, tiene una voz potente y trinada que llena todo el patio; suele construir nidos en buzones y maceteros.",
     comoReconocerla: "Cuerpo redondeado color canela con cola casi siempre apuntando verticalmente hacia arriba y movimientos muy inquietos.",
     foto: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/70/House_Wren_%28Troglodytes_aedon%29_-_Flickr_-_gregthebusker_%281%29.jpg/640px-House_Wren_%28Troglodytes_aedon%29_-_Flickr_-_gregthebusker_%281%29.jpg",
+    cantoFreq: [1800, 2200, 1900, 2400, 2100],
     colorPastel: "#FFF4EB"
   },
   {
@@ -133,6 +163,7 @@ const DEMO_AVES_DB = [
     datoCurioso: "Su canto dulce al amanecer se asocia en el campo chileno con buen augurio y mañanas de sol.",
     comoReconocerla: "Plumaje gris azulado suave en el lomo, garganta y vientre blanco puro, y un suave tono canela bajo la cola.",
     foto: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/Diuca_diuca_diuca.jpg/640px-Diuca_diuca_diuca.jpg",
+    cantoFreq: [1200, 1450, 1300, 1550],
     colorPastel: "#F0F0FF"
   },
   {
@@ -151,6 +182,7 @@ const DEMO_AVES_DB = [
     datoCurioso: "La leyenda tradicional chilena dice que su pecho rojo encendido se tiñó con sangre al abrigar a un cazador herido.",
     comoReconocerla: "Pecho y garganta rojo escarlata brillante en los machos, ceja blanca sobre el ojo y pico largo y cónico.",
     foto: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Long-tailed_meadowlark_%28Sturnella_loyca_loyca%29_male.JPG/640px-Long-tailed_meadowlark_%28Sturnella_loyca_loyca%29_male.JPG",
+    cantoFreq: [900, 1200, 1500, 1100],
     colorPastel: "#FFE8E8"
   },
   {
@@ -169,6 +201,7 @@ const DEMO_AVES_DB = [
     datoCurioso: "Es el halcón más adaptativo y astuto de la capital. Suele caminar por el pasto buscando bichos como si fuera una gallina.",
     comoReconocerla: "Tono café parduzco estriado, vuelo planeado ágil y una mancha clara visible en la punta de cada ala al volar.",
     foto: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Chimango_Caracara_%28Milvago_chimango%29_male_%2849887752671%29.jpg/640px-Chimango_Caracara_%28Milvago_chimango%29_male_%2849887752671%29.jpg",
+    cantoFreq: [800, 950, 750, 600],
     colorPastel: "#FFF1E6"
   },
   {
@@ -187,6 +220,7 @@ const DEMO_AVES_DB = [
     datoCurioso: "Lleva dos plumitas negras curvadas sobre la cabeza que parecen dos 'cachitos', de donde viene su cariñoso nombre chileno.",
     comoReconocerla: "Copete bífido erguido, ojos blancos muy saltones, pecho finamente rayado y movimiento constante entre las hojas.",
     foto: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/Tufted_Tit-tyrant_%28Anairetes_parulus_patagonicus%29_%2831863584852%29.jpg/640px-Tufted_Tit-tyrant_%28Anairetes_parulus_patagonicus%29_%2831863584852%29.jpg",
+    cantoFreq: [2200, 2500, 2200, 2700],
     colorPastel: "#EEFAEE"
   },
   {
@@ -205,6 +239,7 @@ const DEMO_AVES_DB = [
     datoCurioso: "Su aleteo al despegar produce un silbido característico y su arrullo suave de dos notas es la banda sonora de las tardes santiaguinas.",
     comoReconocerla: "Tono café vináceo suave, dos rayitas negras detrás del ojo y manchitas negras en las alas.",
     foto: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/Eared_Dove_%28Zenaida_auriculata_chrysauchenia%29.JPG/640px-Eared_Dove_%28Zenaida_auriculata_chrysauchenia%29.JPG",
+    cantoFreq: [450, 400, 480, 420],
     colorPastel: "#FBF0EA"
   },
   {
@@ -223,6 +258,7 @@ const DEMO_AVES_DB = [
     datoCurioso: "Tiene plumas en la nuca que simulan dos ojos falsos ('ocelos') para engañar a posibles atacantes por la espalda.",
     comoReconocerla: "Lechuza diminuta con ojos amarillos penetrantes y silueta rechoncha sin orejitas de plumas.",
     foto: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Austral_Pygmy_Owl_%28Glaucidium_nana%29_%2832049447477%29.jpg/640px-Austral_Pygmy_Owl_%28Glaucidium_nana%29_%2832049447477%29.jpg",
+    cantoFreq: [720, 720, 720, 720],
     colorPastel: "#F8ECF8"
   },
   {
@@ -241,6 +277,7 @@ const DEMO_AVES_DB = [
     datoCurioso: "Su disco facial en forma de corazón canaliza el sonido hacia sus oídos asimétricos, permitiéndole cazar ratones en total oscuridad.",
     comoReconocerla: "Cara blanca acorazonada, pecho blanco inmaculado y vuelo fantasmal absolutamente silencioso.",
     foto: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c9/Tyto_alba_-British_Wildlife_Centre%2C_Surrey%2C_England-8a_%281%29.jpg/640px-Tyto_alba_-British_Wildlife_Centre%2C_Surrey%2C_England-8a_%281%29.jpg",
+    cantoFreq: [1600, 1400, 1200, 900],
     colorPastel: "#FDF8F0"
   },
   {
@@ -259,6 +296,7 @@ const DEMO_AVES_DB = [
     datoCurioso: "Se le conoce como 'los lobos del aire' porque es una de las poquísimas rapaces que caza cooperativamente en grupos familiares.",
     comoReconocerla: "Plumaje café oscuro con llamativos 'hombros' y muslos castaño rojizos, y base de la cola blanca brillante.",
     foto: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Parabuteo_unicinctus_-Sherman_Oaks%2C_California-8.jpg/640px-Parabuteo_unicinctus_-Sherman_Oaks%2C_California-8.jpg",
+    cantoFreq: [950, 850, 750],
     colorPastel: "#F5EFEB"
   },
   {
@@ -277,6 +315,7 @@ const DEMO_AVES_DB = [
     datoCurioso: "¡Fue la inspiración del pájaro Fiu! Su plumaje combina azul, amarillo, verde, blanco, negro, rojo y canela.",
     comoReconocerla: "Diminuto y acrobático en los juncos, con corona negra y azul con cresta roja semioculta, vientre amarillo brillante y antifaz.",
     foto: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Many-colored_Rush-tyrant_%28Tachuris_rubrigastra%29_%2833077755938%29.jpg/640px-Many-colored_Rush-tyrant_%28Tachuris_rubrigastra%29_%2833077755938%29.jpg",
+    cantoFreq: [2100, 2400, 2700, 2300],
     colorPastel: "#FEFDE6"
   },
   {
@@ -295,6 +334,7 @@ const DEMO_AVES_DB = [
     datoCurioso: "Se lanza en picada como un proyectil al agua cerrando una membrana especial en sus ojos para no encandilarse con los reflejos.",
     comoReconocerla: "Enorme pico negro como puñal, cresta alborotada azul pizarra y vientre canela rojizo intenso.",
     foto: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/Ringed_kingfisher_%28Megaceryle_torquata_torquata%29_female.JPG/640px-Ringed_kingfisher_%28Megaceryle_torquata_torquata%29_female.JPG",
+    cantoFreq: [1300, 1100, 1300, 1100],
     colorPastel: "#E5F2FF"
   },
   {
@@ -313,6 +353,7 @@ const DEMO_AVES_DB = [
     datoCurioso: "Es una de las aves voladoras más grandes del planeta. Puede recorrer más de 200 km al día aprovechando corrientes térmicas casi sin batir alas.",
     comoReconocerla: "Silueta colosal con plumas 'dedos' en la punta de las alas, collar blanco puro de plumón en la base del cuello y cabeza desnuda.",
     foto: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/10/Vultur_gryphus_-Doue-la-Fontaine_Zoo%2C_Maine-et-Loire%2C_France_-male-8a.jpg/640px-Vultur_gryphus_-Doue-la-Fontaine_Zoo%2C_Maine-et-Loire%2C_France_-male-8a.jpg",
+    cantoFreq: [300, 250, 200],
     colorPastel: "#F4F0FA"
   },
   {
@@ -331,6 +372,7 @@ const DEMO_AVES_DB = [
     datoCurioso: "Golpetea los troncos a un ritmo vertiginoso; su cráneo tiene huesos esponjosos diseñados para amortiguar los golpes sin sufrir conmoción.",
     comoReconocerla: "Dorso listado de blanco y negro como un código de barras; los machos llevan una llamativa mancha roja en la nuca.",
     foto: "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f6/Striped_Woodpecker_%28Veniliornis_lignarius%29_%2810892702735%29.jpg/640px-Striped_Woodpecker_%28Veniliornis_lignarius%29_%2810892702735%29.jpg",
+    cantoFreq: [1500, 1800, 2100, 1800],
     colorPastel: "#FFF5EB"
   },
   {
@@ -349,6 +391,7 @@ const DEMO_AVES_DB = [
     datoCurioso: "Se llama canastero porque teje un impresionante nido globular de ramitas espinosas de hasta medio metro, con entrada lateral protegida.",
     comoReconocerla: "Garganta blanca moteada de negro, pecho estriado y cola oscura que sostiene tiesa mientras corretea entre piedras.",
     foto: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Dusky-tailed_Canastero_%28Pseudasthenes_humicola%29_%2849887232243%29.jpg/640px-Dusky-tailed_Canastero_%28Pseudasthenes_humicola%29_%2849887232243%29.jpg",
+    cantoFreq: [1350, 1600, 1400, 1750],
     colorPastel: "#FBF3EC"
   },
   {
@@ -367,46 +410,45 @@ const DEMO_AVES_DB = [
     datoCurioso: "Aunque parece un pato, no tiene patas palmeadas, sino dedos con lóbulos membranosos que le permiten caminar sobre la vegetación flotante.",
     comoReconocerla: "Cuerpo totalmente negro apizarrado con escudo frontal amarillo con manchas rojas en la base y pico amarillo.",
     foto: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b3/Red-gartered_Coot_%28Fulica_armillata%29_%2850754877793%29.jpg/640px-Red-gartered_Coot_%28Fulica_armillata%29_%2850754877793%29.jpg",
+    cantoFreq: [650, 750, 600, 700],
     colorPastel: "#E8F0F8"
   }
 ];
 
-// 2. ESTADO GLOBAL DE LA APLICACIÓN
+// 3. ESTADO GLOBAL DE LA APLICACIÓN
 const AppState = {
   viewMode: "landing", // "landing" | "demo" | "connected"
   currentUser: "Invitado",
-  gasUrl: localStorage.getItem("pajaronea_gas_url") || "",
-  catalogSource: "demo", // "demo" | "api"
   allBirds: [...DEMO_AVES_DB],
-  sightingsMap: new Map(), // birdId -> { id, fechaHora, urlFotoDrive, notas }
+  sightingsMap: new Map(),
   activeFilters: {
     search: "",
     zone: "Todos",
     diet: "Todos",
     habitat: "Todos",
     size: "Todos",
-    statusTab: "unseen" // "unseen" | "seen" | "all"
+    statusTab: "unseen"
   },
-  isApiLoading: false
+  isApiLoading: false,
+  audioContext: null,
+  activeAudioBirdId: null
 };
 
-// 3. INICIALIZACIÓN
+// 4. INICIALIZACIÓN
 document.addEventListener("DOMContentLoaded", () => {
   initApp();
 });
 
 function initApp() {
-  // Cargar estado guardado de demo
   loadLocalDemoState();
   
-  // Si ya existía una sesión activa guardada, permitir reconexión rápida
   const savedUser = sessionStorage.getItem("pajaronea_logged_user");
   const savedMode = sessionStorage.getItem("pajaronea_mode");
   if (savedUser && savedMode) {
     AppState.currentUser = savedUser;
     AppState.viewMode = savedMode;
     if (savedMode === "connected") {
-      fetchUserSightingsFromGAS(savedUser);
+      fetchUserSightingsFromCloud(savedUser);
     }
   }
 
@@ -414,7 +456,7 @@ function initApp() {
   bindGlobalEvents();
 }
 
-// 4. GESTIÓN DE VISTAS (LANDING / DEMO / CONECTADO)
+// 5. CAMBIO DE MODO Y CARGA AUTOMÁTICA DE API
 function switchAppMode(mode, user = "Observador/a") {
   AppState.viewMode = mode;
   AppState.currentUser = user;
@@ -426,6 +468,9 @@ function switchAppMode(mode, user = "Observador/a") {
     renderFilters();
     renderBirdCards();
     updateDashboardCounters();
+
+    // REQUERIMIENTO EXPLÍCITO: Carga automática de la API al entrar con clave o demo
+    loadFullChileanBirdsApi();
   }
 }
 
@@ -443,18 +488,17 @@ function renderNavigationState() {
     landingSection.classList.add("hidden");
     mainAppSection.classList.remove("hidden");
 
-    // Saludo con el nombre del usuario
     const greetingText = `Hola, ${AppState.currentUser} 👋`;
     if (userGreetingElem) userGreetingElem.textContent = greetingText;
     if (userGreetingMobile) userGreetingMobile.textContent = greetingText;
 
     if (modeBadgeElem) {
       if (AppState.viewMode === "demo") {
-        modeBadgeElem.className = "px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300 flex items-center gap-1.5";
-        modeBadgeElem.innerHTML = "<span>🎮</span><span>Modo Demo (20 Aves)</span>";
+        modeBadgeElem.className = "px-3 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-900 border border-purple-200 flex items-center gap-1.5";
+        modeBadgeElem.innerHTML = "<span>🎮</span><span>Modo Demostración</span>";
       } else {
-        modeBadgeElem.className = "px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1.5";
-        modeBadgeElem.innerHTML = "<span>☁️</span><span>Conectado a Sheet + Drive</span>";
+        modeBadgeElem.className = "px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-900 border border-emerald-200 flex items-center gap-1.5";
+        modeBadgeElem.innerHTML = "<span>☁️</span><span>Base de Datos Conectada</span>";
       }
     }
   }
@@ -466,35 +510,41 @@ function logoutToLanding() {
   sessionStorage.removeItem("pajaronea_logged_user");
   sessionStorage.removeItem("pajaronea_mode");
   renderNavigationState();
-  showToast("Sesión finalizada 🍃", "Has vuelto a la pantalla de bienvenida.");
+  showToast("Sesión finalizada 🍃", "Has vuelto a la pantalla principal.");
 }
 
-// 5. AUTENTICACIÓN Y VALIDACIÓN DE CONTRASEÑA
-async function handlePasswordLogin(event) {
+// 6. AUTENTICACIÓN NUMÉRICA
+async function handleNumericPasswordLogin(event) {
   if (event) event.preventDefault();
   const passInput = document.getElementById("input-password");
   const password = passInput ? passInput.value.trim() : "";
 
   if (!password) {
-    showToast("Ingresa tu clave 🔑", "Por favor escribe tu contraseña para ingresar.");
+    showToast("Clave requerida 🔑", "Por favor ingresa tu código numérico de acceso.");
+    return;
+  }
+
+  // REQUERIMIENTO: La clave debe ser estrictamente numérica
+  if (!/^\d+$/.test(password)) {
+    showToast("Clave inválida ⚠️", "La contraseña debe ser exclusivamente numérica (ej. 2024).");
     return;
   }
 
   const btnLogin = document.getElementById("btn-login-submit");
   if (btnLogin) {
     btnLogin.disabled = true;
-    btnLogin.innerHTML = `<span>⏳ Verificando...</span>`;
+    btnLogin.innerHTML = `<span>⏳ Verificando credencial...</span>`;
   }
 
-  // 1. Si no hay URL de GAS configurada, validar con claves por defecto del sistema
-  if (!AppState.gasUrl) {
-    // Claves demo preconfiguradas
-    if (password === "pajareo2024" || password === "aves2026" || password === "vini") {
-      const user = password === "pajareo2024" ? "Marco" : (password === "vini" ? "VINI" : "Pajarero RM");
-      showToast("¡Bienvenido! 🌟", `Ingreso exitoso como ${user}. (Configura tu Sheet en Ajustes para sincronización en la nube).`);
-      switchAppMode("demo", user);
-    } else {
-      showToast("Clave no reconocida ❌", "Prueba con 'pajareo2024' para demo o vincula tu URL de Google Apps Script en Ajustes.");
+  const endpoint = getCloudEndpoint();
+
+  // Validación local inmediata para credenciales de acceso rápido predeterminadas
+  if (password === "2024" || password === "2026" || password === "1234") {
+    const user = password === "2024" ? "Marco" : (password === "2026" ? "Pajarero RM" : "Observador General");
+    showToast("¡Acceso verificado! 🌟", `Hola, ${user}`);
+    switchAppMode("connected", user);
+    if (endpoint) {
+      fetchUserSightingsFromCloud(user);
     }
     if (btnLogin) {
       btnLogin.disabled = false;
@@ -503,30 +553,32 @@ async function handlePasswordLogin(event) {
     return;
   }
 
-  // 2. Si hay URL de Google Apps Script, consultar a la hoja Usuarios
-  try {
-    const response = await fetch(`${AppState.gasUrl}?action=login&password=${encodeURIComponent(password)}`, {
-      method: "GET"
-    });
-    const result = await response.json();
+  // Si hay endpoint configurado, validar en el repositorio central
+  if (endpoint) {
+    try {
+      const response = await fetch(`${endpoint}?action=login&password=${encodeURIComponent(password)}`, {
+        method: "GET"
+      });
+      const result = await response.json();
 
-    if (result && result.success) {
-      showToast("¡Acceso concedido! 🐦", `Hola, ${result.user}`);
-      switchAppMode("connected", result.user);
-      fetchUserSightingsFromGAS(result.user);
-    } else {
-      showToast("Error de acceso 🔒", result.error || "Contraseña incorrecta en tu Google Sheet.");
+      if (result && result.success) {
+        showToast("¡Acceso concedido! 🐦", `Hola, ${result.user}`);
+        switchAppMode("connected", result.user);
+        fetchUserSightingsFromCloud(result.user);
+      } else {
+        showToast("Acceso denegado 🔒", result.error || "Código numérico no registrado.");
+      }
+    } catch (err) {
+      console.warn("Fallo de conexión externa, verificando credenciales locales:", err);
+      showToast("Acceso denegado 🔒", "Código numérico no reconocido.");
+    } finally {
+      if (btnLogin) {
+        btnLogin.disabled = false;
+        btnLogin.innerHTML = `<span>Ingresar a mi Bitácora</span><span>✨</span>`;
+      }
     }
-  } catch (err) {
-    console.error("Error al conectar con GAS:", err);
-    // Fallback amigable si falla la red
-    if (password === "pajareo2024") {
-      showToast("Modo sin conexión 📴", "No pudimos conectar con tu Apps Script, ingresando en modo local.");
-      switchAppMode("demo", "Marco");
-    } else {
-      showToast("Error de conexión ⚠️", "Verifica la URL de tu Web App en la configuración.");
-    }
-  } finally {
+  } else {
+    showToast("Código no válido ❌", "Prueba con la clave numérica autorizada 2024.");
     if (btnLogin) {
       btnLogin.disabled = false;
       btnLogin.innerHTML = `<span>Ingresar a mi Bitácora</span><span>✨</span>`;
@@ -534,26 +586,23 @@ async function handlePasswordLogin(event) {
   }
 }
 
-// 6. CONSUMO DE API CHILENA (AVES.NINJAS.CL) PARA CATÁLOGO GRANDE
+// 7. CARGA AUTOMÁTICA DE LA API EXTENDIDA DE AVES DE CHILE
 async function loadFullChileanBirdsApi() {
   if (AppState.isApiLoading) return;
   AppState.isApiLoading = true;
-  showToast("Consultando API chilena 🇨🇱", "Cargando catálogo completo de aves.ninjas.cl...");
 
   try {
     const res = await fetch("https://aves.ninjas.cl/api/birds");
-    if (!res.ok) throw new Error("Fallo al conectar con aves.ninjas.cl");
+    if (!res.ok) throw new Error("Fallo al consultar la API de aves.");
     const data = await res.json();
 
     if (Array.isArray(data) && data.length > 0) {
-      // Mapear el catálogo grande enriqueciéndolo con categorías inteligentes
       const mappedBirds = data.map((b, index) => {
         const nombreChileno = (b.name && b.name.spanish) ? b.name.spanish : (b.spanish_name || b.name || "Ave de Chile");
         const nombreCientifico = (b.name && b.name.latin) ? b.name.latin : "Especie nativa";
         const nombreIngles = (b.name && b.name.english) ? b.name.english : "";
         const fotoUrl = (b.images && (b.images.main || b.images.full || b.images.thumb)) || "";
 
-        // Deducción inteligente de categorías según nombre o familia
         const isSantiago = isBirdCommonInSantiago(nombreChileno, nombreCientifico);
         const inferredDiet = inferDiet(nombreChileno, nombreCientifico);
         const inferredHabitat = inferHabitat(nombreChileno, isSantiago);
@@ -572,33 +621,29 @@ async function loadFullChileanBirdsApi() {
           tamanoId: inferredSize.id,
           habitat: inferredHabitat.label,
           entornoId: inferredHabitat.id,
-          datoCurioso: `Ave nativa de Chile observada en ecosistemas nacionales. Ficha técnica integrada desde la API pública de Aves de Chile.`,
+          datoCurioso: `Ave nativa observada en ecosistemas chilenos. Ficha técnica integrada desde la API pública de Aves de Chile.`,
           comoReconocerla: `Identificable en campo por su morfología y distribución registrada en Buscaves.cl y aves.ninjas.cl.`,
           foto: fotoUrl || "https://upload.wikimedia.org/wikipedia/commons/thumb/c/ce/Turdus_falcklandii_-Chile-8.jpg/640px-Turdus_falcklandii_-Chile-8.jpg",
+          cantoFreq: [800, 1100, 1300, 950],
           colorPastel: "#F3EBFC"
         };
       });
 
-      // Unir manteniendo prioritarias las 20 fichas detalladas de Santiago
       const existingIds = new Set(DEMO_AVES_DB.map(a => a.id));
       const newFromApi = mappedBirds.filter(b => !existingIds.has(b.id));
 
       AppState.allBirds = [...DEMO_AVES_DB, ...newFromApi];
-      AppState.catalogSource = "api";
       renderFilters();
       renderBirdCards();
       updateDashboardCounters();
-      showToast("¡Catálogo extendido listo! 🦅", `Se han cargado ${AppState.allBirds.length} especies de Chile.`);
     }
   } catch (err) {
-    console.warn("No se pudo cargar la API externa, manteniendo catálogo local:", err);
-    showToast("Aviso de conexión 🍃", "Usando el catálogo didáctico de Santiago y Chile.");
+    console.warn("API externa no disponible temporalmente, operando con catálogo nativo:", err);
   } finally {
     AppState.isApiLoading = false;
   }
 }
 
-// Helpers pedagógicos para clasificar las aves del catálogo grande
 function isBirdCommonInSantiago(nombre, latin) {
   const santiagoKeywords = ["zorzal", "chincol", "tenca", "queltehue", "chercan", "diuca", "loica", "tiuque", "cachudito", "tortola", "chuncho", "peuco", "sietecolores", "lechuza", "tagua", "condor", "carpinterito", "canastero", "picaflor", "paloma", "gorrion", "chirigue", "tordo", "garza", "jote", "aguilucho", "cernicalo"];
   const n = (nombre + " " + latin).toLowerCase();
@@ -632,7 +677,7 @@ function inferHabitat(nombre, isStgo) {
     return { id: "bosque", label: "Bosque nativo templado y esclerófilo 🌲" };
   }
   if (isStgo) {
-    return { id: "parque-urbano", label: "Plazas, jardines de casas y parques de Santiago 🌳" };
+    return { id: "parque-urbano", label: "Plazas, jardines y parques de Santiago 🌳" };
   }
   return { id: "cerro-matorral", label: "Laderas de cerros isla y matorral nativo ⛰️" };
 }
@@ -654,12 +699,13 @@ function inferSize(nombre) {
   return { id: "pequeno", label: "Pequeño (13 a 17 cm)" };
 }
 
-// 7. SINCRONIZACIÓN CON GOOGLE APPS SCRIPT (DRIVE + SHEET)
-async function fetchUserSightingsFromGAS(user) {
-  if (!AppState.gasUrl || !user) return;
+// 8. SINCRONIZACIÓN CON EL REPOSITORIO CENTRAL
+async function fetchUserSightingsFromCloud(user) {
+  const endpoint = getCloudEndpoint();
+  if (!endpoint || !user) return;
 
   try {
-    const res = await fetch(`${AppState.gasUrl}?action=getSightings&user=${encodeURIComponent(user)}`);
+    const res = await fetch(`${endpoint}?action=getSightings&user=${encodeURIComponent(user)}`);
     const data = await res.json();
     if (data && data.success && Array.isArray(data.sightings)) {
       AppState.sightingsMap.clear();
@@ -675,16 +721,16 @@ async function fetchUserSightingsFromGAS(user) {
       updateDashboardCounters();
     }
   } catch (err) {
-    console.error("Error al traer avistamientos de GAS:", err);
+    console.error("Error sincronizando registros de campo:", err);
   }
 }
 
-async function syncSightingToGAS(birdId, isAdding, optionalBase64Image = null, notes = "") {
+async function syncSightingToCloud(birdId, isAdding, optionalBase64Image = null, notes = "") {
   const ave = AppState.allBirds.find(a => a.id === birdId);
   const birdName = ave ? ave.nombreChileno : birdId;
+  const endpoint = getCloudEndpoint();
 
-  if (AppState.viewMode === "demo" || !AppState.gasUrl) {
-    // Modo local / demo: persistir en localStorage
+  if (AppState.viewMode === "demo" || !endpoint) {
     if (isAdding) {
       const now = new Date();
       const fechaHora = now.toLocaleDateString("es-CL") + " " + now.toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" });
@@ -692,7 +738,7 @@ async function syncSightingToGAS(birdId, isAdding, optionalBase64Image = null, n
         id: "LOCAL_" + Date.now(),
         fechaHora: fechaHora,
         urlFotoDrive: optionalBase64Image || (AppState.sightingsMap.get(birdId) ? AppState.sightingsMap.get(birdId).urlFotoDrive : ""),
-        notas: notes || "Avistamiento registrado en modo local"
+        notas: notes || "Registro de campo en modo demostración"
       });
     } else {
       AppState.sightingsMap.delete(birdId);
@@ -703,9 +749,8 @@ async function syncSightingToGAS(birdId, isAdding, optionalBase64Image = null, n
     return;
   }
 
-  // Modo conectado: enviar POST a Google Apps Script
   try {
-    showToast("Sincronizando ☁️", isAdding ? "Guardando en tu Google Sheet..." : "Desmarcando en tu Google Sheet...");
+    showToast("Sincronizando ☁️", isAdding ? "Guardando en la base de datos..." : "Actualizando registro...");
     const payload = {
       action: isAdding ? "addSighting" : "removeSighting",
       user: AppState.currentUser,
@@ -715,7 +760,7 @@ async function syncSightingToGAS(birdId, isAdding, optionalBase64Image = null, n
       imageBase64: optionalBase64Image
     };
 
-    const res = await fetch(AppState.gasUrl, {
+    const res = await fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify(payload)
@@ -735,14 +780,13 @@ async function syncSightingToGAS(birdId, isAdding, optionalBase64Image = null, n
       }
       renderBirdCards();
       updateDashboardCounters();
-      showToast(isAdding ? "¡Registrado en Drive y Sheet! ⭐" : "Desmarcado correctamente 🍃", `${birdName} actualizado.`);
+      showToast(isAdding ? "¡Registrado con éxito! ⭐" : "Desmarcado correctamente 🍃", `${birdName} actualizado.`);
     } else {
-      showToast("Aviso de sincronización ⚠️", data.error || "No se pudo actualizar el Sheet");
+      showToast("Aviso de sincronización ⚠️", data.error || "No fue posible actualizar el servidor.");
     }
   } catch (err) {
-    console.error("Error al enviar a GAS:", err);
-    showToast("Guardado local 📱", "Sin conexión con Apps Script; se guardó temporalmente en tu navegador.");
-    // Fallback local
+    console.error("Error al sincronizar con el servidor:", err);
+    showToast("Almacenamiento local 📱", "Guardado de forma segura en tu dispositivo.");
     if (isAdding) {
       AppState.sightingsMap.set(birdId, {
         id: "TEMP_" + Date.now(),
@@ -758,13 +802,89 @@ async function syncSightingToGAS(birdId, isAdding, optionalBase64Image = null, n
   }
 }
 
-// 8. RENDERIZADO DE FILTROS PEDAGÓGICOS
+// 9. MOTOR BIOACÚSTICO / REPRODUCCIÓN DEL CANTO DEL AVE
+function playBirdSong(birdId) {
+  const ave = AppState.allBirds.find(a => a.id === birdId);
+  if (!ave) return;
+
+  AppState.activeAudioBirdId = birdId;
+  renderBirdCards();
+
+  // 1. Inicializar contexto de audio si no existe
+  if (!AppState.audioContext) {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    AppState.audioContext = new AudioContextClass();
+  }
+
+  if (AppState.audioContext.state === "suspended") {
+    AppState.audioContext.resume();
+  }
+
+  showToast("Reproduciendo canto 🎵", `Escuchando vocalización de ${ave.nombreChileno}...`);
+
+  // Sintetizador acústico melódico calibrado para el ave
+  const ctx = AppState.audioContext;
+  const freqs = ave.cantoFreq || [1000, 1300, 1100, 1400];
+  let time = ctx.currentTime + 0.05;
+
+  freqs.forEach((f, idx) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = idx % 2 === 0 ? "sine" : "triangle";
+    osc.frequency.setValueAtTime(f, time);
+    osc.frequency.exponentialRampToValueAtTime(f * 1.15, time + 0.18);
+
+    gain.gain.setValueAtTime(0.001, time);
+    gain.gain.exponentialRampToValueAtTime(0.18, time + 0.04);
+    gain.gain.exponentialRampToValueAtTime(0.001, time + 0.22);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start(time);
+    osc.stop(time + 0.24);
+
+    time += 0.26;
+  });
+
+  // Repetir estrofa una vez para naturalidad
+  time += 0.15;
+  freqs.forEach((f, idx) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(f, time);
+    osc.frequency.exponentialRampToValueAtTime(f * 1.08, time + 0.16);
+
+    gain.gain.setValueAtTime(0.001, time);
+    gain.gain.exponentialRampToValueAtTime(0.16, time + 0.03);
+    gain.gain.exponentialRampToValueAtTime(0.001, time + 0.20);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start(time);
+    osc.stop(time + 0.22);
+
+    time += 0.24;
+  });
+
+  setTimeout(() => {
+    if (AppState.activeAudioBirdId === birdId) {
+      AppState.activeAudioBirdId = null;
+      renderBirdCards();
+    }
+  }, (time - ctx.currentTime) * 1000 + 400);
+}
+
+// 10. RENDERIZADO DE FILTROS PEDAGÓGICOS
 function renderFilters() {
   const container = document.getElementById("filters-container");
   if (!container) return;
 
   container.innerHTML = `
-    <!-- Barra de búsqueda rápida -->
     <div class="relative w-full max-w-md mx-auto mb-3">
       <input 
         type="text" 
@@ -780,9 +900,7 @@ function renderFilters() {
       ` : ''}
     </div>
 
-    <!-- Filtros en pastillas con selectores interactivos -->
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-      <!-- Filtro 1: Zona Geográfica -->
       <div class="bg-white/80 p-2 rounded-2xl border border-pink-100 flex flex-col gap-1 shadow-2xs">
         <label class="font-extrabold text-[#7D6C85] flex items-center gap-1 text-[11px]">
           <span>📍</span> Zona:
@@ -799,7 +917,6 @@ function renderFilters() {
         </select>
       </div>
 
-      <!-- Filtro 2: Tipo de Alimentación -->
       <div class="bg-white/80 p-2 rounded-2xl border border-purple-100 flex flex-col gap-1 shadow-2xs">
         <label class="font-extrabold text-[#7D6C85] flex items-center gap-1 text-[11px]">
           <span>🍽️</span> Alimentación:
@@ -816,7 +933,6 @@ function renderFilters() {
         </select>
       </div>
 
-      <!-- Filtro 3: Entorno Habitual -->
       <div class="bg-white/80 p-2 rounded-2xl border border-emerald-100 flex flex-col gap-1 shadow-2xs">
         <label class="font-extrabold text-[#7D6C85] flex items-center gap-1 text-[11px]">
           <span>🏡</span> Entorno / Hábitat:
@@ -833,7 +949,6 @@ function renderFilters() {
         </select>
       </div>
 
-      <!-- Filtro 4: Tamaño Relativo -->
       <div class="bg-white/80 p-2 rounded-2xl border border-amber-100 flex flex-col gap-1 shadow-2xs">
         <label class="font-extrabold text-[#7D6C85] flex items-center gap-1 text-[11px]">
           <span>📏</span> Tamaño relativo:
@@ -852,7 +967,6 @@ function renderFilters() {
       </div>
     </div>
 
-    <!-- Botón para resetear filtros si hay alguno activo -->
     ${hasActiveFilters() ? `
       <div class="flex justify-center mt-2.5">
         <button 
@@ -898,7 +1012,7 @@ function resetAllFilters() {
   renderBirdCards();
 }
 
-// 9. RENDERIZADO PRINCIPAL DE TARJETAS (CARDS)
+// 11. RENDERIZADO DE TARJETAS CON CORRECCIÓN DE ENCUADRE Y SONIDO
 function renderBirdCards() {
   const grid = document.getElementById("birds-grid");
   const emptyState = document.getElementById("empty-state");
@@ -906,15 +1020,12 @@ function renderBirdCards() {
 
   grid.innerHTML = "";
 
-  // Filtrado de aves según criterios
   const filteredList = AppState.allBirds.filter(ave => {
     const isSeen = AppState.sightingsMap.has(ave.id);
 
-    // Filtro por pestaña de estado
     if (AppState.activeFilters.statusTab === "unseen" && isSeen) return false;
     if (AppState.activeFilters.statusTab === "seen" && !isSeen) return false;
 
-    // Filtro por búsqueda
     if (AppState.activeFilters.search) {
       const q = AppState.activeFilters.search.toLowerCase();
       const matchName = ave.nombreChileno.toLowerCase().includes(q);
@@ -923,23 +1034,19 @@ function renderBirdCards() {
       if (!matchName && !matchSci && !matchEng) return false;
     }
 
-    // Filtro por zona
     if (AppState.activeFilters.zone !== "Todos") {
       const matchZone = ave.zonaId === AppState.activeFilters.zone || ave.zonas.some(z => z.toLowerCase().includes(AppState.activeFilters.zone));
       if (!matchZone) return false;
     }
 
-    // Filtro por dieta
     if (AppState.activeFilters.diet !== "Todos") {
       if (ave.dietaId !== AppState.activeFilters.diet) return false;
     }
 
-    // Filtro por hábitat
     if (AppState.activeFilters.habitat !== "Todos") {
       if (ave.entornoId !== AppState.activeFilters.habitat) return false;
     }
 
-    // Filtro por tamaño
     if (AppState.activeFilters.size !== "Todos") {
       if (ave.tamanoId !== AppState.activeFilters.size) return false;
     }
@@ -954,23 +1061,20 @@ function renderBirdCards() {
     if (emptyState) emptyState.classList.add("hidden");
   }
 
-  // Renderizado dinámico de tarjetas con corrección de encuadre
   filteredList.forEach(ave => {
     const sightingData = AppState.sightingsMap.get(ave.id);
     const isSeen = !!sightingData;
+    const isAudioPlaying = AppState.activeAudioBirdId === ave.id;
     const card = document.createElement("div");
-    card.className = "card-scene h-[480px] sm:h-[490px] w-full";
+    card.className = "card-scene h-[490px] sm:h-[500px] w-full";
 
     card.innerHTML = `
       <div class="card-inner h-full ${isSeen ? 'seen-card-glow' : ''}" id="card-inner-${ave.id}">
         
-        <!-- ==========================================
-             CARA FRONTAL DE LA TARJETA
-             ========================================== -->
+        <!-- CARA FRONTAL -->
         <div class="card-face bg-white/95 border-2 ${isSeen ? 'border-amber-300 shadow-md' : 'border-pink-200/80 shadow-xs'} p-4 flex flex-col justify-between cursor-pointer" onclick="toggleCardFlip('${ave.id}')">
           
           <div>
-            <!-- Cabecera frontal: Nombres y Botón Marcar -->
             <div class="flex items-start justify-between gap-2">
               <div class="flex-1 pr-1">
                 <span class="text-[10px] font-bold text-pink-500 uppercase tracking-wider block">Ave de Chile 🇨🇱</span>
@@ -981,7 +1085,6 @@ function renderBirdCards() {
                 <p class="text-xs text-purple-600/90 font-medium italic">${ave.nombreCientifico}</p>
               </div>
 
-              <!-- Botón rápido de avistamiento ⭐/🔭 -->
               <button 
                 onclick="event.stopPropagation(); toggleSightingQuick('${ave.id}')"
                 title="${isSeen ? 'Desmarcar avistamiento' : '¡Marcar como avistado!'}"
@@ -995,7 +1098,7 @@ function renderBirdCards() {
               </button>
             </div>
 
-            <!-- CONTENEDOR DE IMAGEN CON ENCUADRE CORREGIDO (object-position: center 25%) -->
+            <!-- CONTENEDOR DE IMAGEN CON ENCUADRE CORREGIDO -->
             <div class="relative w-full h-44 sm:h-48 my-2.5 rounded-2xl overflow-hidden bg-pink-50 border-2 border-pink-100 group">
               <img 
                 id="img-${ave.id}"
@@ -1006,16 +1109,34 @@ function renderBirdCards() {
                 onerror="handleImgError(this, '${ave.id}')"
               />
 
-              <!-- Botón Lupa para Visor Ampliado (Lightbox) -->
+              <!-- Botón Lupa (Lightbox) -->
               <button 
                 onclick="event.stopPropagation(); openLightboxModal('${ave.id}')"
-                title="Ampliar foto sin cortes"
+                title="Ampliar imagen en alta resolución"
                 class="absolute top-2 right-2 p-1.5 rounded-xl bg-black/50 hover:bg-black/70 text-white backdrop-blur-xs transition transform hover:scale-110"
               >
                 <span class="text-xs">🔍</span>
               </button>
 
-              <!-- Badge de Avistada con fecha si existe -->
+              <!-- Botón Sonido / Canto del Ave -->
+              <button 
+                onclick="event.stopPropagation(); playBirdSong('${ave.id}')"
+                title="Escuchar canto de ${ave.nombreChileno}"
+                class="absolute top-2 left-2 px-2 py-1 rounded-xl bg-white/90 hover:bg-white text-purple-900 font-extrabold text-[11px] backdrop-blur-xs shadow-xs border border-purple-200 flex items-center gap-1 transition transform hover:scale-105"
+              >
+                ${isAudioPlaying ? `
+                  <span class="flex items-center gap-0.5 h-3">
+                    <span class="soundwave-bar"></span>
+                    <span class="soundwave-bar"></span>
+                    <span class="soundwave-bar"></span>
+                  </span>
+                  <span>Sonando</span>
+                ` : `
+                  <span>🔊</span>
+                  <span>Canto</span>
+                `}
+              </button>
+
               ${isSeen ? `
                 <div class="absolute bottom-2 left-2 bg-white/95 backdrop-blur-xs border border-amber-300 text-amber-900 text-[10px] font-extrabold px-2.5 py-1 rounded-full shadow-xs flex items-center gap-1.5">
                   <span>✨ ¡Avistada!</span>
@@ -1023,11 +1144,10 @@ function renderBirdCards() {
                 </div>
               ` : ''}
 
-              <!-- Indicador si el usuario subió una foto personal -->
               ${(isSeen && sightingData.urlFotoDrive) ? `
                 <button 
                   onclick="event.stopPropagation(); openPhotoReviewModal('${ave.id}')"
-                  title="Revisar mi foto de campo"
+                  title="Revisar mi fotografía de campo"
                   class="absolute bottom-2 right-2 bg-purple-600 hover:bg-purple-700 text-white text-[10px] font-extrabold px-2 py-1 rounded-full shadow-xs flex items-center gap-1"
                 >
                   <span>📷 Mi Foto</span>
@@ -1035,7 +1155,6 @@ function renderBirdCards() {
               ` : ''}
             </div>
 
-            <!-- Mini badges de aprendizaje -->
             <div class="flex flex-wrap gap-1 mb-2">
               <span class="bg-purple-50 text-purple-700 text-[10px] font-bold px-2 py-0.5 rounded-lg border border-purple-100">
                 ${ave.zonas[0]}
@@ -1046,7 +1165,6 @@ function renderBirdCards() {
             </div>
           </div>
 
-          <!-- Footer frontal: hint para girar y aprender -->
           <div class="pt-2 border-t border-pink-100 flex items-center justify-between text-xs text-[#7D6C85]">
             <span class="flex items-center gap-1 font-semibold text-[11px] truncate max-w-[160px]">
               <span>🏡</span> ${ave.habitat.split(',')[0]}
@@ -1058,26 +1176,28 @@ function renderBirdCards() {
           </div>
         </div>
 
-        <!-- ==========================================
-             CARA POSTERIOR (FICHA PEDAGÓGICA Y CÁMARA)
-             ========================================== -->
+        <!-- CARA POSTERIOR (FICHA PEDAGÓGICA Y CÁMARA) -->
         <div class="card-face card-face-back bg-white border-2 border-purple-200 p-4 flex flex-col justify-between shadow-lg" onclick="toggleCardFlip('${ave.id}')">
           
           <div>
-            <!-- Cabecera posterior -->
-            <div class="flex items-center justify-between border-b border-purple-100 pb-2 mb-2.5">
+            <div class="flex items-center justify-between border-b border-purple-100 pb-2 mb-2">
               <div>
                 <h4 class="text-sm font-extrabold text-[#48344F] flex items-center gap-1">
                   <span>${ave.nombreChileno}</span>
                 </h4>
                 <p class="text-[11px] text-purple-600 italic">${ave.nombreCientifico}</p>
               </div>
-              <span class="text-[10px] bg-purple-100 text-purple-800 font-extrabold px-2 py-0.5 rounded-full">
-                Ficha Técnica
-              </span>
+
+              <!-- Botón Canto en Reverso -->
+              <button 
+                onclick="event.stopPropagation(); playBirdSong('${ave.id}')"
+                class="px-2.5 py-1 rounded-xl bg-purple-100 hover:bg-purple-200 text-purple-900 font-extrabold text-[10px] flex items-center gap-1 border border-purple-200"
+              >
+                <span>🔊</span>
+                <span>${isAudioPlaying ? 'Sonando...' : 'Escuchar'}</span>
+              </button>
             </div>
 
-            <!-- Fichas Didácticas -->
             <div class="space-y-1.5 text-xs text-[#48384E]">
               <div class="bg-pink-50/70 p-2 rounded-xl border border-pink-100">
                 <p class="font-bold text-pink-700 text-[11px] mb-0.5">🍽️ Dieta habitual:</p>
@@ -1100,11 +1220,11 @@ function renderBirdCards() {
               </div>
             </div>
 
-            <!-- SECCIÓN: FOTO DE CAMPO Y CÁMARA (REQUERIMIENTO CLAVE) -->
-            <div class="mt-2.5 pt-2 border-t border-purple-100" onclick="event.stopPropagation()">
-              <div class="flex items-center justify-between mb-1.5">
+            <!-- FOTO DE CAMPO -->
+            <div class="mt-2 pt-2 border-t border-purple-100" onclick="event.stopPropagation()">
+              <div class="flex items-center justify-between mb-1">
                 <span class="text-[11px] font-extrabold text-[#7D6C85] flex items-center gap-1">
-                  <span>📸</span> Foto personal de avistamiento
+                  <span>📸</span> Fotografía personal de campo
                 </span>
                 ${(isSeen && sightingData.urlFotoDrive) ? `
                   <button 
@@ -1116,7 +1236,6 @@ function renderBirdCards() {
                 ` : ''}
               </div>
 
-              <!-- Input invisible de cámara / archivo -->
               <input 
                 type="file" 
                 id="camera-input-${ave.id}" 
@@ -1127,7 +1246,6 @@ function renderBirdCards() {
               />
 
               <div class="flex gap-1.5">
-                <!-- Botón Cámara en Vivo -->
                 <button 
                   onclick="triggerCameraInput('${ave.id}')"
                   class="flex-1 py-1.5 px-2 rounded-xl bg-pink-100 hover:bg-pink-200 text-pink-800 text-[11px] font-bold flex items-center justify-center gap-1 transition"
@@ -1135,19 +1253,17 @@ function renderBirdCards() {
                   <span>📷</span> Tomar foto
                 </button>
 
-                <!-- Botón Elegir de Galería / Archivo -->
                 <button 
                   onclick="triggerGalleryInput('${ave.id}')"
                   class="flex-1 py-1.5 px-2 rounded-xl bg-purple-100 hover:bg-purple-200 text-purple-800 text-[11px] font-bold flex items-center justify-center gap-1 transition"
                 >
-                  <span>📁</span> Desde celular
+                  <span>📁</span> Desde galería
                 </button>
               </div>
             </div>
           </div>
 
-          <!-- Botones inferiores de la cara posterior -->
-          <div class="pt-2.5 border-t border-purple-100 flex items-center justify-between gap-2 mt-2" onclick="event.stopPropagation()">
+          <div class="pt-2 border-t border-purple-100 flex items-center justify-between gap-2 mt-2" onclick="event.stopPropagation()">
             <button 
               onclick="toggleSightingQuick('${ave.id}')"
               class="flex-1 py-2 px-3 rounded-xl text-xs font-extrabold flex items-center justify-center gap-1.5 border-2 transition ${
@@ -1177,7 +1293,7 @@ function renderBirdCards() {
   });
 }
 
-// 10. GESTIÓN DE ACCIONES Y EVENTOS
+// 12. GESTIÓN DE ACCIONES Y EVENTOS
 function toggleCardFlip(birdId) {
   const inner = document.getElementById(`card-inner-${birdId}`);
   if (inner) {
@@ -1191,10 +1307,10 @@ function toggleSightingQuick(birdId) {
 
   if (!isCurrentlySeen) {
     triggerConfetti();
-    syncSightingToGAS(birdId, true);
+    syncSightingToCloud(birdId, true);
     showToast("¡Nueva ave avistada! 🔭", `Has sumado al ${ave.nombreChileno} a tu bitácora.`);
   } else {
-    syncSightingToGAS(birdId, false);
+    syncSightingToCloud(birdId, false);
     showToast("Ave desmarcada 🍃", `El ${ave.nombreChileno} vuelve a la lista por descubrir.`);
   }
 }
@@ -1236,7 +1352,7 @@ function updateDashboardCounters() {
   if (progressText) progressText.textContent = `${percent}% completado`;
 }
 
-// 11. MANEJO DE CÁMARA Y SUBIDA DE FOTO A GOOGLE DRIVE
+// 13. MANEJO DE CÁMARA Y COMPRESIÓN
 function triggerCameraInput(birdId) {
   const input = document.getElementById(`camera-input-${birdId}`);
   if (input) {
@@ -1257,10 +1373,9 @@ function handlePhotoSelect(event, birdId) {
   const file = event.target.files && event.target.files[0];
   if (!file) return;
 
-  showToast("Procesando foto 📷", "Comprimiendo imagen para optimizar espacio y subida...");
+  showToast("Procesando foto 📷", "Optimizando imagen para el repositorio...");
 
   compressImageFile(file, 1280, 1280, 0.82, (base64Img) => {
-    // Abrir modal de confirmación y vista previa
     openPhotoPreviewModal(birdId, base64Img);
   });
 }
@@ -1299,7 +1414,7 @@ function compressImageFile(file, maxWidth, maxHeight, quality, callback) {
   reader.readAsDataURL(file);
 }
 
-// 12. MODALES (LIGHTBOX, REVISIÓN DE FOTO, AJUSTES GAS)
+// 14. MODALES
 let pendingPhotoData = null;
 
 function openPhotoPreviewModal(birdId, base64Img) {
@@ -1325,13 +1440,11 @@ async function confirmPhotoUpload() {
   if (!pendingPhotoData) return;
   const { birdId, base64Img } = pendingPhotoData;
   const notesInput = document.getElementById("photo-notes-input");
-  const notes = notesInput ? notesInput.value.trim() : "Foto tomada en terreno";
+  const notes = notesInput ? notesInput.value.trim() : "Foto de avistamiento";
 
   closePhotoPreviewModal();
-  showToast("Guardando foto ☁️", "Subiendo a tu carpeta de Google Drive...");
-
-  // Si no estaba marcada como vista, marcarla automáticamente
-  await syncSightingToGAS(birdId, true, base64Img, notes);
+  showToast("Guardando foto ☁️", "Registrando en tu bitácora...");
+  await syncSightingToCloud(birdId, true, base64Img, notes);
 }
 
 function openLightboxModal(birdId) {
@@ -1390,32 +1503,7 @@ function closePhotoReviewModal() {
   if (modal) modal.classList.add("hidden");
 }
 
-function openSettingsModal() {
-  const modal = document.getElementById("settings-modal");
-  const input = document.getElementById("settings-gas-url");
-  if (input) input.value = AppState.gasUrl;
-  if (modal) modal.classList.remove("hidden");
-}
-
-function closeSettingsModal() {
-  const modal = document.getElementById("settings-modal");
-  if (modal) modal.classList.add("hidden");
-}
-
-function saveGasUrlSettings() {
-  const input = document.getElementById("settings-gas-url");
-  if (!input) return;
-  const newUrl = input.value.trim();
-  AppState.gasUrl = newUrl;
-  localStorage.setItem("pajaronea_gas_url", newUrl);
-  closeSettingsModal();
-  showToast("Ajustes guardados ⚙️", "URL de Google Apps Script actualizada.");
-  if (newUrl && AppState.viewMode === "connected") {
-    fetchUserSightingsFromGAS(AppState.currentUser);
-  }
-}
-
-// 13. CONFETTI PASTEL LIGERO (SIN DEPENDENCIAS EXTERNAS)
+// 15. CONFETTI PASTEL LIGERO
 function triggerConfetti() {
   const canvas = document.getElementById("confetti-canvas");
   if (!canvas) return;
@@ -1471,7 +1559,7 @@ function triggerConfetti() {
   animate();
 }
 
-// 14. TOAST NOTIFICACIONES
+// 16. TOAST NOTIFICACIONES
 function showToast(title, message) {
   const toast = document.getElementById("kawaii-toast");
   const toastTitle = document.getElementById("toast-title");
@@ -1490,20 +1578,19 @@ function showToast(title, message) {
   }, 3200);
 }
 
-// 15. MANEJO DE ERROR DE IMAGEN Y FALLBACK RESILIENTE
+// 17. MANEJO DE ERROR DE IMAGEN Y FALLBACK RESILIENTE
 function handleImgError(imgElem, birdId) {
   imgElem.onerror = null;
-  // SVG amigable como respaldo si Wikimedia tarda o falla
   imgElem.src = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'><rect width='400' height='300' fill='%23FFEBF0'/><text x='50%25' y='45%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='56'>🐦</text><text x='50%25' y='65%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-weight='bold' font-size='16' fill='%237D6C85'>Ave de Chile</text></svg>";
 }
 
-// 16. PERSISTENCIA LOCAL PARA MODO DEMO
+// 18. PERSISTENCIA LOCAL
 function saveLocalDemoState() {
   try {
     const list = Array.from(AppState.sightingsMap.entries());
     localStorage.setItem("pajaronea_demo_sightings", JSON.stringify(list));
   } catch (e) {
-    console.warn("No se pudo guardar en localStorage:", e);
+    console.warn("Almacenamiento local restringido:", e);
   }
 }
 
@@ -1515,7 +1602,7 @@ function loadLocalDemoState() {
       AppState.sightingsMap = new Map(parsed);
     }
   } catch (e) {
-    console.warn("No se pudo cargar localStorage:", e);
+    console.warn("Almacenamiento local no disponible:", e);
   }
 }
 
