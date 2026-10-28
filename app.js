@@ -7,17 +7,18 @@
  * ============================================================================
  */
 
-// 1. SEGURIDAD DEL ENDPOINT CLOUD (OFUSCACIÓN BÁSICA CLIENTE REVERSIBLE)
-// La URL del backend permanece ofuscada para evitar su extracción directa como texto plano.
+// 1. ENDPOINT CLOUD VINCULADO
 const _EP_KEY = 42;
-// Endpoint seguro codificado (XOR + Base64)
-// Para cambiar el endpoint: ejecutar en consola btoa(String.fromCharCode(...tuUrl.split('').map(c=>c.charCodeAt(0)^42)))
+// URL del Web App de Google Apps Script vinculada a Pajaronea_DB
 const _SECURE_CLOUD_BLOB = "https://script.google.com/macros/s/AKfycbyavaJREb62By2cSbo7ViRjFu2MnL7qKmiX_iYa-DYAC8nVpv0I_lFSoq_aifi83UcH/exec";
 
 function getCloudEndpoint() {
-  // Si el usuario configuró uno personalizado en almacenamiento local, tiene prioridad
   const custom = localStorage.getItem("pajaronea_cloud_ep");
   if (custom && custom.trim().length > 10) return custom.trim();
+
+  if (_SECURE_CLOUD_BLOB && (_SECURE_CLOUD_BLOB.startsWith("http://") || _SECURE_CLOUD_BLOB.startsWith("https://"))) {
+    return _SECURE_CLOUD_BLOB.trim();
+  }
 
   try {
     const raw = atob(_SECURE_CLOUD_BLOB);
@@ -27,7 +28,7 @@ function getCloudEndpoint() {
     }
     return decoded;
   } catch (e) {
-    return "";
+    return _SECURE_CLOUD_BLOB;
   }
 }
 
@@ -597,6 +598,38 @@ async function loadFullChileanBirdsApi() {
     const data = await res.json();
 
     if (Array.isArray(data) && data.length > 0) {
+      // 1. Mapear aves de la API y crear un mapa por nombre científico normalizado
+      const apiByLatin = new Map();
+      const apiBySpanish = new Map();
+
+      data.forEach((b, index) => {
+        const latin = (b.name && b.name.latin ? b.name.latin : "").toLowerCase().trim();
+        const spanish = (b.name && b.name.spanish ? b.name.spanish : "").toLowerCase().trim();
+        const fotoUrl = (b.images && (b.images.main || b.images.full || b.images.thumb)) || "";
+        if (latin) apiByLatin.set(latin, { b, fotoUrl });
+        if (spanish) apiBySpanish.set(spanish, { b, fotoUrl });
+      });
+
+      // 2. Actualizar las 20 aves iniciales con las fotos auténticas de aves.ninjas.cl
+      DEMO_AVES_DB.forEach(ave => {
+        const latinKey = (ave.nombreCientifico || "").toLowerCase().trim();
+        const spanishKey = (ave.nombreChileno || "").toLowerCase().trim();
+        let match = apiByLatin.get(latinKey);
+        if (!match) {
+          // Búsqueda por coincidencia parcial de nombre
+          for (let [spKey, val] of apiBySpanish.entries()) {
+            if (spanishKey.includes(spKey) || spKey.includes(spanishKey.split(' ')[0])) {
+              match = val;
+              break;
+            }
+          }
+        }
+        if (match && match.fotoUrl) {
+          ave.foto = match.fotoUrl;
+        }
+      });
+
+      // 3. Crear lista de aves adicionales desde la API
       const mappedBirds = data.map((b, index) => {
         const nombreChileno = (b.name && b.name.spanish) ? b.name.spanish : (b.spanish_name || b.name || "Ave de Chile");
         const nombreCientifico = (b.name && b.name.latin) ? b.name.latin : "Especie nativa";
@@ -623,14 +656,15 @@ async function loadFullChileanBirdsApi() {
           entornoId: inferredHabitat.id,
           datoCurioso: `Ave nativa observada en ecosistemas chilenos. Ficha técnica integrada desde la API pública de Aves de Chile.`,
           comoReconocerla: `Identificable en campo por su morfología y distribución registrada en Buscaves.cl y aves.ninjas.cl.`,
-          foto: fotoUrl || "https://upload.wikimedia.org/wikipedia/commons/thumb/c/ce/Turdus_falcklandii_-Chile-8.jpg/640px-Turdus_falcklandii_-Chile-8.jpg",
+          foto: fotoUrl,
           cantoFreq: [800, 1100, 1300, 950],
           colorPastel: "#F3EBFC"
         };
       });
 
-      const existingIds = new Set(DEMO_AVES_DB.map(a => a.id));
-      const newFromApi = mappedBirds.filter(b => !existingIds.has(b.id));
+      // Evitar duplicar las 20 aves iniciales
+      const initialLatinSet = new Set(DEMO_AVES_DB.map(a => (a.nombreCientifico || "").toLowerCase().trim()));
+      const newFromApi = mappedBirds.filter(b => !initialLatinSet.has((b.nombreCientifico || "").toLowerCase().trim()));
 
       AppState.allBirds = [...DEMO_AVES_DB, ...newFromApi];
       renderFilters();
